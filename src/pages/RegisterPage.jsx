@@ -1,11 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import memberApi from "../api/memberApi";
 import "../styles/registerpage.css";
 
 export default function RegisterPage() {
-  const [loginId, setLoginId] = useState("");
   const [isEmailSent, setIsEmailSent] = useState(false);
-  const [code, setCode] = useState("");
   const [emailCheckMsg, setEmailCheckMsg] = useState("");
 
   const [form, setForm] = useState({
@@ -60,30 +58,21 @@ export default function RegisterPage() {
     }).open();
   };
 
-  const handleEmailSend = async () => {
-    if (!form.loginId) {
-      alert("이메일을 입력해주세요!");
-      return;
-    }
+  const handleSendEmail = async () => {
+    if (!form.loginId) return alert("이메일을 입력해주세요!");
 
     try {
-      await memberApi.emailSend(form.loginId);
-      alert("인증 코드가 전송되었습니다!");
-
-      setIsEmailSent(true);
+      if (isEmailSent) {
+        await memberApi.reEmailSend(form.loginId);
+        alert("인증 코드가 재전송되었습니다!");
+      } else {
+        await memberApi.emailSend(form.loginId);
+        alert("인증 코드가 전송되었습니다!");
+        setIsEmailSent(true);
+      }
     } catch (err) {
       console.error(err);
       alert("전송에 실패했습니다.");
-    }
-  };
-
-  const handleReEmailSend = async () => {
-    try {
-      await memberApi.reEmailSend(form.loginId);
-      alert("인증 코드가 재전송되었습니다!");
-    } catch (err) {
-      console.error(err);
-      alert("재전송 실패");
     }
   };
 
@@ -101,6 +90,12 @@ export default function RegisterPage() {
       alert("인증 실패" + form.code);
     }
   };
+
+  useEffect(() => {
+    if (form.code.length === 6) {
+      handleCodeVerift();
+    }
+  }, [form.code]);
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -164,7 +159,7 @@ export default function RegisterPage() {
             <button
               className="btn btn-outline-success"
               type="button"
-              onClick={isEmailSent ? handleReEmailSend : handleEmailSend}
+              onClick={handleSendEmail}
             >
               {isEmailSent ? "재전송" : "전송"}
             </button>
